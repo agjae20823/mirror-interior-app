@@ -1,6 +1,11 @@
 import streamlit as st
-from streamlit_drawable_canvas import st_canvas
 from PIL import Image
+
+# Pillow 10+ 에서 제거된 ANTIALIAS를 streamlit-drawable-canvas가 사용하므로 호환용 패치
+if not hasattr(Image, "ANTIALIAS"):
+    Image.ANTIALIAS = Image.LANCZOS
+
+from streamlit_drawable_canvas import st_canvas
 import base64
 import time
 import urllib.parse
@@ -199,7 +204,7 @@ st.divider()
 st.subheader("4. 이 거울 종류로 상품 추천받기")
 if st.button("추천 상품 검색하기"):
     search_query = f"{mirror_type_kr} {color_kr} 원목"
-    with st.spinner(f"'{search_query}' 검색 중... (셀레니움 구동에 시간이 좀 걸릴 수 있어요)"):
+    with st.spinner(f"'{search_query}' 검색 중... "):
         results = search_naver_shopping(search_query)
 
     if results:
