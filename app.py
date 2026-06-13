@@ -62,7 +62,10 @@ def search_naver_shopping(query: str, max_items: int = 6):
     """
     다나와 검색 결과를 셀레니움으로 크롤링.
     """
+    import shutil
+
     options = Options()
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1280,1024")
@@ -74,7 +77,17 @@ def search_naver_shopping(query: str, max_items: int = 6):
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    # Streamlit Cloud(Linux)에 apt로 설치된 chromium 사용
+    chromium_path = shutil.which("chromium") or shutil.which("chromium-browser")
+    if chromium_path:
+        options.binary_location = chromium_path
+
+    chromedriver_path = shutil.which("chromedriver")
+    if chromedriver_path:
+        driver = webdriver.Chrome(service=Service(chromedriver_path), options=options)
+    else:
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     results = []
 
@@ -171,8 +184,12 @@ st.divider()
 st.subheader("4. 이 거울 종류로 상품 추천받기")
 if st.button("추천 상품 검색하기"):
     search_query = f"{mirror_type_kr} {color_kr} 원목"
-    with st.spinner(f"'{search_query}' 검색 중... (셀레니움 구동에 시간이 좀 걸릴 수 있어요)"):
-        results = search_naver_shopping(search_query)
+    with st.spinner(f"'{search_query}' 검색 중... "):
+        try:
+            results = search_naver_shopping(search_query)
+        except Exception as e:
+            results = []
+            st.error(f"크롤링 중 오류가 발생했습니다: {e}")
 
     if results:
         st.success(f"'{search_query}' 검색 결과 {len(results)}개")
